@@ -9,9 +9,9 @@ COPY . .
 
 RUN go mod tidy
 
-RUN go build -o /tactical-figure
+RUN go build -o /tactical-figure-1
 
-EXPOSE 8009
 EXPOSE 8008
+EXPOSE 8009
 
-ENTRYPOINT ["/tactical-figure"]
+ENTRYPOINT ["/tactical-figure-1"]
