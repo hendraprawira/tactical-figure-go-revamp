@@ -1,0 +1,84 @@
+definitions:
+  models.Point:
+    properties:
+      altitude:
+        type: string
+      amplifications:
+        type: string
+      color:
+        items:
+          type: number
+        type: array
+      coordinates:
+        items:
+          type: number
+        type: array
+      opacity:
+        type: integer
+    type: object
+  tacticalfigure.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /figure/multi:
+    get:
+      description: Get All Tactical Multi Line Figure
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Point'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/tacticalfigure.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tacticalfigure.ErrorResponse'
+      summary: Get All Tactical Multi Line Figure
+      tags:
+      - Tactical Figure
+  /figure/point:
+    get:
+      description: Get All Tactical Point Figure
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Point'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/tacticalfigure.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tacticalfigure.ErrorResponse'
+      summary: Get All Tactical Point Figure
+      tags:
+      - Tactical Figure
+  /figure/single:
+    get:
+      description: Get All Tactical Single Line Figure
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Point'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/tacticalfigure.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tacticalfigure.ErrorResponse'
+      summary: Get All Tactical Multi Single Line Figure
+      tags:
+      - Tactical Figure
+swagger: "2.0"

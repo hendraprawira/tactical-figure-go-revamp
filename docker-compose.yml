@@ -1,0 +1,10 @@
+version: '3.9'
+services:
+  app:
+    container_name: tactical-figure-1
+    build: .
+    ports: 
+      - 8008:8008 
+    restart: always
+    volumes:
+      - "/app"
