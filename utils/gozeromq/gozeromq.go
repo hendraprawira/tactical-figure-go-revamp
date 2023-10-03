@@ -14,7 +14,7 @@ import (
 )
 
 func StartZMQSubs() error {
-	port := "tcp://localhost:" + os.Getenv("ZMQ_PORT")
+	port := "tcp://192.168.160.250:" + os.Getenv("ZMQ_PORT")
 	//  Prepare our subscriber
 	sub := zmq4.NewSub(context.Background())
 	defer sub.Close()

@@ -5,7 +5,6 @@ services:
     build: .
     ports: 
       - 8008:8008 
-      - 8009:8009 
     restart: always
     volumes:
       - "/app"
