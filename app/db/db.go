@@ -54,8 +54,9 @@ func ConnectDatabase() (*gorm.DB, error) {
 func InsertDBPoint(data *models.Point) {
 	jsonData, _ := json.Marshal(data.Coordinates)
 	jsonStr := string(jsonData)
-	datas := models.TacticalFigure{
+	datas := models.TacticalFigureInput{
 		FigureType:     "Point",
+		IdUnique:       data.IdUnique,
 		Coordinates:    jsonStr,
 		Color:          data.Color,
 		Amplifications: data.Amplifications,
@@ -76,6 +77,7 @@ func InsertDBSingle(data *models.SingleLine) {
 	jsonStr := string(jsonData)
 	datas := models.TacticalFigure{
 		FigureType:     "Single",
+		IdUnique:       data.IdUnique,
 		Coordinates:    jsonStr,
 		Color:          data.Color,
 		Amplifications: data.Amplifications,
@@ -96,6 +98,7 @@ func InsertDBMulti(data *models.MultiLine) {
 	jsonStr := string(jsonData)
 	tacticalFigure := models.TacticalFigure{
 		FigureType:     "Multi",
+		IdUnique:       data.IdUnique,
 		Coordinates:    jsonStr,
 		Color:          data.Color,
 		Amplifications: data.Amplifications,

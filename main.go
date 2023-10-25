@@ -3,10 +3,12 @@ package main
 import (
 	"be-tactical-figure/app/router"
 	zeromqGo "be-tactical-figure/utils/gozeromq"
+	"context"
 	"fmt"
 	"log"
 	"os"
 
+	zmq4 "github.com/go-zeromq/zmq4"
 	"github.com/joho/godotenv"
 )
 
@@ -27,8 +29,16 @@ func main() {
 		}
 	}()
 
+	pub := zmq4.NewPub(context.Background())
+	defer pub.Close()
+
+	errs := pub.Listen("tcp://*:5563")
+	if errs != nil {
+		log.Fatalf("could not listen: %v", errs)
+	}
+
 	// Start the Gin server
-	if err := router.Routes().Run(port); err != nil {
+	if err := router.Routes(pub).Run(port); err != nil {
 		log.Fatalln(err)
 	}
 	select {}

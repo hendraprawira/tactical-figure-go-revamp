@@ -1,6 +1,7 @@
 package gozeromq
 
 import (
+	tacticalfigure "be-tactical-figure/app/controller/tactical-figure"
 	"be-tactical-figure/app/db"
 	"be-tactical-figure/app/models"
 	"context"
@@ -14,7 +15,8 @@ import (
 )
 
 func StartZMQSubs() error {
-	port := "tcp://192.168.160.250:" + os.Getenv("ZMQ_PORT")
+	mockID := os.Getenv("MOCK_ID")
+	port := "tcp://*:" + os.Getenv("ZMQ_PORT")
 	//  Prepare our subscriber
 	sub := zmq4.NewSub(context.Background())
 	defer sub.Close()
@@ -62,31 +64,53 @@ func StartZMQSubs() error {
 				reconnect()
 				continue
 			}
-			if string(msg.Frames[0]) == "Point" {
-				var point *models.Point
-				if err := json.Unmarshal([]byte(string(msg.Frames[1])), &point); err != nil {
-					fmt.Println("Error:", err)
-					return
+			if string(msg.Frames[2]) != mockID {
+				if string(msg.Frames[0]) == "Point" {
+					fmt.Println("Data Receive", string(msg.Frames[1]))
+					if string(msg.Frames[2]) == "true" {
+						var point *models.Point
+						if err := json.Unmarshal([]byte(string(msg.Frames[1])), &point); err != nil {
+							fmt.Println("Error:", err)
+							return
+						}
+						db.InsertDBPoint(point)
+						fmt.Println("Save To DB")
+					}
+					tacticalfigure.SseChannel <- string(msg.Frames[1])
+					fmt.Println("Didnt Save To DB")
+
+				} else if string(msg.Frames[0]) == "Single" {
+					fmt.Println("Data Receive", string(msg.Frames[1]))
+					if string(msg.Frames[2]) == "true" {
+						var single *models.SingleLine
+						if err := json.Unmarshal([]byte(string(msg.Frames[1])), &single); err != nil {
+							fmt.Println("Error:", err)
+							return
+						}
+						db.InsertDBSingle(single)
+						fmt.Println("Save To DB")
+					}
+					tacticalfigure.SseChannel <- string(msg.Frames[1])
+					fmt.Println("Didnt Save To DB")
+
+				} else if string(msg.Frames[0]) == "Multi" {
+					fmt.Println("Data Receive", string(msg.Frames[1]))
+					if string(msg.Frames[2]) == "true" {
+						var multi *models.MultiLine
+						if err := json.Unmarshal([]byte(string(msg.Frames[1])), &multi); err != nil {
+							fmt.Println("Error:", err)
+							return
+						}
+						db.InsertDBMulti(multi)
+						fmt.Println("Save To DB")
+					}
+					tacticalfigure.SseChannel <- string(msg.Frames[1])
+					fmt.Println("Didnt Save To DB")
 				}
-				db.InsertDBPoint(point)
-				fmt.Println("Data Receive")
-			} else if string(msg.Frames[0]) == "Single" {
-				var single *models.SingleLine
-				if err := json.Unmarshal([]byte(string(msg.Frames[1])), &single); err != nil {
-					fmt.Println("Error:", err)
-					return
-				}
-				db.InsertDBSingle(single)
-				fmt.Println("Data Receive")
-			} else if string(msg.Frames[0]) == "Multi" {
-				var multi *models.MultiLine
-				if err := json.Unmarshal([]byte(string(msg.Frames[1])), &multi); err != nil {
-					fmt.Println("Error:", err)
-					return
-				}
-				db.InsertDBMulti(multi)
-				fmt.Println("Data Receive")
+			} else {
+				fmt.Println("Data Receive But Same Mock")
 			}
+
 		}
 	}()
 
