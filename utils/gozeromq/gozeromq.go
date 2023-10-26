@@ -16,102 +16,120 @@ import (
 
 func StartZMQSubs() error {
 	mockID := os.Getenv("MOCK_ID")
-	port := "tcp://192.168.160.132:" + os.Getenv("ZMQ_PORT")
-	//  Prepare our subscriber
-	sub := zmq4.NewSub(context.Background())
-	defer sub.Close()
 
-	// Subscribe to multiple topics
-	topics := []string{"Point", "Single", "Multi"}
-	for _, topic := range topics {
-		err := sub.SetOption(zmq4.OptionSubscribe, topic)
-		if err != nil {
-			log.Fatalf("could not subscribe: %v", err)
-			return err
-		}
+	// Define a list of IP addresses to connect to
+	zmqPorts := []string{
+		"tcp://192.168.160.132:" + os.Getenv("ZMQ_PORT"),
+		"tcp://192.168.160.133:" + os.Getenv("ZMQ_PORT"),
+		// Add more addresses as needed
 	}
 
-	// Function to handle reconnection to the publisher
-	reconnect := func() {
-		for {
-			err := sub.Dial(port)
-			if err != nil {
-				log.Printf("could not dial: %v", err)
-			} else {
-				log.Println("Connected to publisher")
-				return // Exit the function when the connection is established
-			}
+	// Create a map to track the connection state for each host
+	connectionState := make(map[string]bool)
 
-			// Sleep for some time before trying to connect again
-			time.Sleep(10 * time.Microsecond)
+	// Prepare a subscriber for each IP address
+	subs := make([]zmq4.Socket, 0)
+	for _, port := range zmqPorts {
+		sub := zmq4.NewSub(context.Background())
+		subs = append(subs, sub)
+
+		// Subscribe to the desired topics
+		topics := []string{"Point", "Single", "Multi"}
+		for _, topic := range topics {
+			err := sub.SetOption(zmq4.OptionSubscribe, topic)
+			if err != nil {
+				log.Fatalf("could not subscribe: %v", err)
+				return err
+			}
 		}
-	}
 
-	// Start a goroutine to handle initial connection and reconnection
-	go reconnect()
+		// Initialize the connection state for this host
+		connectionState[port] = true
 
-	go func() {
-		for {
-			// Read envelope
-			msg, err := sub.Recv()
-			if err != nil {
-				log.Printf("could not receive message: %v", err)
-				// Sleep for some time before trying to receive again
-				time.Sleep(10 * time.Microsecond)
-				// If the connection is lost, attempt to reconnect
-				log.Println("Connection lost, attempting to reconnect...")
-				reconnect()
-				continue
-			}
-			if string(msg.Frames[2]) != mockID {
-				if string(msg.Frames[0]) == "Point" {
-					fmt.Println("Data Receive", string(msg.Frames[1]))
-					if string(msg.Frames[2]) == "true" {
-						var point *models.Point
-						if err := json.Unmarshal([]byte(string(msg.Frames[1])), &point); err != nil {
-							fmt.Println("Error:", err)
-							return
-						}
-						db.InsertDBPoint(point)
-						fmt.Println("Save To DB")
-					}
-					tacticalfigure.SseChannel <- string(msg.Frames[1])
-					fmt.Println("Didnt Save To DB")
-
-				} else if string(msg.Frames[0]) == "Single" {
-					fmt.Println("Data Receive", string(msg.Frames[1]))
-					if string(msg.Frames[2]) == "true" {
-						var single *models.SingleLine
-						if err := json.Unmarshal([]byte(string(msg.Frames[1])), &single); err != nil {
-							fmt.Println("Error:", err)
-							return
-						}
-						db.InsertDBSingle(single)
-						fmt.Println("Save To DB")
-					}
-					tacticalfigure.SseChannel <- string(msg.Frames[1])
-					fmt.Println("Didnt Save To DB")
-
-				} else if string(msg.Frames[0]) == "Multi" {
-					fmt.Println("Data Receive", string(msg.Frames[1]))
-					if string(msg.Frames[2]) == "true" {
-						var multi *models.MultiLine
-						if err := json.Unmarshal([]byte(string(msg.Frames[1])), &multi); err != nil {
-							fmt.Println("Error:", err)
-							return
-						}
-						db.InsertDBMulti(multi)
-						fmt.Println("Save To DB")
-					}
-					tacticalfigure.SseChannel <- string(msg.Frames[1])
-					fmt.Println("Didnt Save To DB")
+		// Function to handle reconnection to the publisher for this address
+		reconnect := func(port string, sub zmq4.Socket) {
+			for {
+				err := sub.Dial(port)
+				if err != nil {
+					log.Printf("could not dial %s: %v", port, err)
+					// Update the connection state for this host
+					connectionState[port] = false
+				} else {
+					log.Printf("Connected to publisher at %s", port)
+					// Update the connection state for this host
+					connectionState[port] = true
+					return
 				}
-			} else {
-				fmt.Println("Data Receive But Same Mock")
+				time.Sleep(10 * time.Second) // Adjust the sleep time as needed
 			}
-
 		}
-	}()
+
+		// Start a goroutine to handle initial connection and reconnection for this address
+		go reconnect(port, sub)
+
+		go func(port string, sub zmq4.Socket) {
+			for {
+				// Read envelope and process messages (similar to your existing code)
+				msg, err := sub.Recv()
+				if err != nil {
+					log.Printf("could not receive message: %v", err)
+					time.Sleep(10 * time.Second)
+					log.Println("Connection lost, attempting to reconnect...")
+					reconnect(port, sub)
+					continue
+				}
+
+				// Process the received message (similar to your existing code)
+				if string(msg.Frames[2]) != mockID {
+					if string(msg.Frames[0]) == "Point" {
+						fmt.Println("Data Receive", string(msg.Frames[1]))
+						if string(msg.Frames[2]) == "true" {
+							var point *models.Point
+							if err := json.Unmarshal([]byte(string(msg.Frames[1])), &point); err != nil {
+								fmt.Println("Error:", err)
+								return
+							}
+							db.InsertDBPoint(point)
+							fmt.Println("Save To DB")
+						}
+						tacticalfigure.SseChannel <- string(msg.Frames[1])
+						fmt.Println("Didnt Save To DB")
+
+					} else if string(msg.Frames[0]) == "Single" {
+						fmt.Println("Data Receive", string(msg.Frames[1]))
+						if string(msg.Frames[2]) == "true" {
+							var single *models.SingleLine
+							if err := json.Unmarshal([]byte(string(msg.Frames[1])), &single); err != nil {
+								fmt.Println("Error:", err)
+								return
+							}
+							db.InsertDBSingle(single)
+							fmt.Println("Save To DB")
+						}
+						tacticalfigure.SseChannel <- string(msg.Frames[1])
+						fmt.Println("Didnt Save To DB")
+
+					} else if string(msg.Frames[0]) == "Multi" {
+						fmt.Println("Data Receive", string(msg.Frames[1]))
+						if string(msg.Frames[2]) == "true" {
+							var multi *models.MultiLine
+							if err := json.Unmarshal([]byte(string(msg.Frames[1])), &multi); err != nil {
+								fmt.Println("Error:", err)
+								return
+							}
+							db.InsertDBMulti(multi)
+							fmt.Println("Save To DB")
+						}
+						tacticalfigure.SseChannel <- string(msg.Frames[1])
+						fmt.Println("Didnt Save To DB")
+					}
+				} else {
+					fmt.Println("Data Receive But Same Mock")
+				}
+
+			}
+		}(port, sub)
+	}
 
 	// Keep the main goroutine running to handle other tasks if needed
 	select {}

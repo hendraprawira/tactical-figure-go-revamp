@@ -124,6 +124,7 @@ func CreatePoint(c *gin.Context, pub zmq4.Socket) {
 	if errs != nil {
 		log.Fatal(errs)
 	}
+	log.Print("SENDED")
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Point created successfullyss", "data": newPoint})
 
