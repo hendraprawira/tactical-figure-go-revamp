@@ -17,7 +17,7 @@ import (
 func StartZMQSubs() error {
 	mockID := os.Getenv("MOCK_ID")
 
-	// Define a list of IP addresses to connect to
+	// Define a list of IP addresses to connect to (multiple)
 	zmqPorts := []string{
 		"tcp://192.168.160.132:" + os.Getenv("ZMQ_PORT"),
 		"tcp://192.168.160.133:" + os.Getenv("ZMQ_PORT"),
