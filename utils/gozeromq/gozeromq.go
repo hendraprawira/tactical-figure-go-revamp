@@ -16,7 +16,7 @@ import (
 
 func StartZMQSubs() error {
 	mockID := os.Getenv("MOCK_ID")
-	port := "tcp://*:" + os.Getenv("ZMQ_PORT")
+	port := "tcp://192.168.160.132:" + os.Getenv("ZMQ_PORT")
 	//  Prepare our subscriber
 	sub := zmq4.NewSub(context.Background())
 	defer sub.Close()
@@ -43,7 +43,7 @@ func StartZMQSubs() error {
 			}
 
 			// Sleep for some time before trying to connect again
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(10 * time.Microsecond)
 		}
 	}
 
@@ -57,8 +57,7 @@ func StartZMQSubs() error {
 			if err != nil {
 				log.Printf("could not receive message: %v", err)
 				// Sleep for some time before trying to receive again
-				time.Sleep(500 * time.Millisecond)
-
+				time.Sleep(10 * time.Microsecond)
 				// If the connection is lost, attempt to reconnect
 				log.Println("Connection lost, attempting to reconnect...")
 				reconnect()
