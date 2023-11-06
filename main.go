@@ -1,15 +1,17 @@
 package main
 
 import (
+	grpcserver "be-tactical-figure/app/grpc-server"
 	"be-tactical-figure/app/router"
-	zeromqGo "be-tactical-figure/utils/gozeromq"
-	"context"
+	"be-tactical-figure/utils/zeromq/publisher"
+	zeroMQ "be-tactical-figure/utils/zeromq/subscriber"
 	"fmt"
 	"log"
 	"os"
 
-	zmq4 "github.com/go-zeromq/zmq4"
+	// zmq4 "github.com/go-zeromq/zmq4"
 	"github.com/joho/godotenv"
+	zmq "github.com/pebbe/zmq4"
 )
 
 func main() {
@@ -21,26 +23,28 @@ func main() {
 
 	port := ":" + os.Getenv("ACTIVE_PORT")
 
-	//start Kafka
+	context, err := zmq.NewContext()
+	if err != nil {
+		fmt.Println("Error creating context:", err)
+		return
+	}
+	defer context.Term()
+
 	go func() {
-		err := zeromqGo.StartZMQSubs()
+		err := zeroMQ.SubscriberZeroMQ()
 		if err != nil {
 			log.Fatalf("Subscriber error: %v", err)
 		}
 	}()
 
-	pub := zmq4.NewPub(context.Background())
-	defer pub.Close()
+	go grpcserver.StartPoint()
 
-	errs := pub.Listen("tcp://*:5563")
-	if errs != nil {
-		log.Fatalf("could not listen: %v", errs)
-	}
+	publisher.PublisherZeroMQ()
 
 	// Start the Gin server
-	if err := router.Routes(pub).Run(port); err != nil {
+	if err := router.Routes().Run(port); err != nil {
 		log.Fatalln(err)
 	}
-	select {}
 
+	select {}
 }

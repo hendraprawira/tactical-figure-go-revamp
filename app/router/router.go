@@ -8,12 +8,14 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/go-zeromq/zmq4"
+
+	// "github.com/go-zeromq/zmq4"
+
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func Routes(pub zmq4.Socket) *gin.Engine {
+func Routes() *gin.Engine {
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
@@ -47,23 +49,9 @@ func Routes(pub zmq4.Socket) *gin.Engine {
 		tacticalFigure.GET("/single", tacticalfigure.GetAllSingle)
 		tacticalFigure.GET("/multi", tacticalfigure.GetAllMulti)
 
-		tacticalFigure.POST("/point", func(c *gin.Context) {
-			// Define parameters you want to pass
-			params := pub
-			tacticalfigure.CreatePoint(c, params)
-		})
-
-		tacticalFigure.POST("/single", func(c *gin.Context) {
-			// Define parameters you want to pass
-			params := pub
-			tacticalfigure.CreateSingleLine(c, params)
-		})
-
-		tacticalFigure.POST("/multi", func(c *gin.Context) {
-			// Define parameters you want to pass
-			params := pub
-			tacticalfigure.CreateMultiLine(c, params)
-		})
+		tacticalFigure.POST("/point", tacticalfigure.CreatePoint)
+		tacticalFigure.POST("/single", tacticalfigure.CreateSingleLine)
+		tacticalFigure.POST("/multi", tacticalfigure.CreateMultiLine)
 
 		tacticalFigure.GET("/pointSSE", tacticalfigure.ClientSSE)
 	}

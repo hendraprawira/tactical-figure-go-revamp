@@ -1,0 +1,35 @@
+syntax = "proto3";
+package point.v1;
+option go_package = "generated-protos/generated-proto-point";
+
+service TacticPoint {
+  rpc CreatePoint(CreatePointRequest) returns (CreatePointResponse) {}
+
+  rpc GetPoint(GetPointRequest) returns (GetPointResponse) {}
+}
+
+message TacticPoint {
+  string idUnique = 1;
+  repeated double coordinates = 2;
+  string color = 3;
+  string amplifications = 4;
+  int32 opacity = 5;
+  double altitude = 6;
+  bool saveDb = 7;
+}
+
+message CreatePointRequest {
+  TacticPoint point = 1;
+}
+
+message GetPointRequest {
+  string id = 1;
+}
+
+message CreatePointResponse {
+  TacticPoint point = 1;
+}
+
+message GetPointResponse {
+  TacticPoint point = 1;
+}

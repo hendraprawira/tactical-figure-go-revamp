@@ -3,6 +3,7 @@ package tacticalfigure
 import (
 	"be-tactical-figure/app/db"
 	"be-tactical-figure/app/models"
+	zeroMQ "be-tactical-figure/utils/zeromq/publisher"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,7 +12,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	zmq4 "github.com/go-zeromq/zmq4"
 )
 
 // @Summary Get All Tactical Point Figure
@@ -74,18 +74,21 @@ func GetAllMulti(c *gin.Context) {
 // SSE channel to broadcast messages
 var SseChannel = make(chan string)
 
-func CreatePoint(c *gin.Context, pub zmq4.Socket) {
+func CreatePoint(c *gin.Context) {
 	// Define a struct for the data you want to insert
 	var newPoint models.Point
 	mockID := os.Getenv("MOCK_ID")
+
 	// Bind the request JSON or form data to the struct
 	if err := c.ShouldBindJSON(&newPoint); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	// Convert [] to string needed for insert to db
 	newCoord := fmt.Sprintf("%v", newPoint.Coordinates)
 	newSaveDb := fmt.Sprintf("%v", newPoint.SaveDB)
+
 	// Insert the newPoint struct into the database
 	if newPoint.SaveDB {
 		result := db.DB.Create(&models.TacticalFigureInput{
@@ -112,25 +115,27 @@ func CreatePoint(c *gin.Context, pub zmq4.Socket) {
 		fmt.Println("Error encoding Point to JSON:", err)
 		return
 	}
+	messageBuffer := make([][]string, 0)
+	datas := []string{"Point", string(jsonData), mockID, newSaveDb}
+	messageBuffer = append(messageBuffer, datas)
 
 	// Publish Message
-	msgA := zmq4.NewMsgFrom(
-		[]byte("Point"),
-		[]byte(jsonData),
-		[]byte(mockID),
-		[]byte(newSaveDb),
-	)
-	errs := pub.Send(msgA)
-	if errs != nil {
-		log.Fatal(errs)
+	for len(messageBuffer) > 0 {
+		_, err := zeroMQ.GlobalPublisher.SendMessageDontwait(messageBuffer[0])
+		if err != nil {
+			log.Print(err)
+			// If message could not be sent, break the loop and try again later
+			break
+		} else {
+			fmt.Println("Sent")
+			messageBuffer = messageBuffer[1:]
+		}
 	}
-	log.Print("SENDED")
-
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Point created successfullyss", "data": newPoint})
 
 }
 
-func CreateSingleLine(c *gin.Context, pub zmq4.Socket) {
+func CreateSingleLine(c *gin.Context) {
 	// Define a struct for the data you want to insert
 	var newPoint models.SingleLine
 	mockID := os.Getenv("MOCK_ID")
@@ -168,24 +173,25 @@ func CreateSingleLine(c *gin.Context, pub zmq4.Socket) {
 		fmt.Println("Error encoding Point to JSON:", err)
 		return
 	}
-
+	messageBuffer := make([]string, 0)
+	messageBuffer = append(messageBuffer, "Point", string(jsonData), mockID, newSaveDb)
 	// Publish Message
-	msgA := zmq4.NewMsgFrom(
-		[]byte("Single"),
-		[]byte(jsonData),
-		[]byte(mockID),
-		[]byte(newSaveDb),
-	)
-	errs := pub.Send(msgA)
-	if errs != nil {
-		log.Fatal(errs)
+	for len(messageBuffer) > 0 {
+		_, err := zeroMQ.GlobalPublisher.SendMessageDontwait(messageBuffer)
+		if err != nil {
+			// If message could not be sent, break the loop and try again later
+			break
+		} else {
+			fmt.Println("Sent:", messageBuffer)
+			messageBuffer = messageBuffer[1:]
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Point created successfullyss", "data": newPoint})
 
 }
 
-func CreateMultiLine(c *gin.Context, pub zmq4.Socket) {
+func CreateMultiLine(c *gin.Context) {
 	// Define a struct for the data you want to insert
 	var newPoint models.MultiLine
 	mockID := os.Getenv("MOCK_ID")
@@ -223,17 +229,18 @@ func CreateMultiLine(c *gin.Context, pub zmq4.Socket) {
 		fmt.Println("Error encoding Point to JSON:", err)
 		return
 	}
-
+	messageBuffer := make([]string, 0)
+	messageBuffer = append(messageBuffer, "Point", string(jsonData), mockID, newSaveDb)
 	// Publish Message
-	msgA := zmq4.NewMsgFrom(
-		[]byte("Multi"),
-		[]byte(jsonData),
-		[]byte(mockID),
-		[]byte(newSaveDb),
-	)
-	errs := pub.Send(msgA)
-	if errs != nil {
-		log.Fatal(errs)
+	for len(messageBuffer) > 0 {
+		_, err := zeroMQ.GlobalPublisher.SendMessageDontwait(messageBuffer)
+		if err != nil {
+			// If message could not be sent, break the loop and try again later
+			break
+		} else {
+			fmt.Println("Sent:", messageBuffer)
+			messageBuffer = messageBuffer[1:]
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "success", "message": "Point created successfullyss", "data": newPoint})
