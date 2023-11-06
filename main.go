@@ -1,7 +1,7 @@
 package main
 
 import (
-	grpcserver "be-tactical-figure/app/grpc-server"
+	grpcroute "be-tactical-figure/app/grpc-route"
 	"be-tactical-figure/app/router"
 	"be-tactical-figure/utils/zeromq/publisher"
 	zeroMQ "be-tactical-figure/utils/zeromq/subscriber"
@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 
-	// zmq4 "github.com/go-zeromq/zmq4"
 	"github.com/joho/godotenv"
 	zmq "github.com/pebbe/zmq4"
 )
@@ -37,7 +36,7 @@ func main() {
 		}
 	}()
 
-	go grpcserver.StartPoint()
+	go grpcroute.StartgRPC()
 
 	publisher.PublisherZeroMQ()
 

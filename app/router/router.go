@@ -1,7 +1,7 @@
 package router
 
 import (
-	tacticalfigure "be-tactical-figure/app/controller/tactical-figure"
+	tacticalfigure "be-tactical-figure/app/controller/rest/tactical-figure"
 	"be-tactical-figure/app/db"
 
 	docs "be-tactical-figure/docs"

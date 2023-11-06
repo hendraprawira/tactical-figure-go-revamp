@@ -47,7 +47,7 @@ func ConnectDatabase() (*gorm.DB, error) {
 	DB = db
 	//auto migrate or auto create table to database connection
 	DB.AutoMigrate(&models.TacticalFigure{})
-	log.Print("Database Connected")
+	fmt.Println("Database Connected")
 	return db, nil
 }
 

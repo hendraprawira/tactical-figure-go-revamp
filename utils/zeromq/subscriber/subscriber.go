@@ -1,7 +1,7 @@
 package subscriber
 
 import (
-	tacticalfigure "be-tactical-figure/app/controller/tactical-figure"
+	tacticalfigure "be-tactical-figure/app/controller/rest/tactical-figure"
 	"be-tactical-figure/app/db"
 	"be-tactical-figure/app/models"
 	"encoding/json"
@@ -13,16 +13,17 @@ import (
 )
 
 func SubscriberZeroMQ() error {
+	port := os.Getenv("ZMQ_PORT")
 	mockID := os.Getenv("MOCK_ID")
 	//  Prepare our subscriber PULL == SUBS
 	subscriber, _ := zmq.NewSocket(zmq.PULL)
 	defer subscriber.Close()
-	subscriber.Connect("tcp://localhost:5555")
+	subscriber.Connect("tcp://localhost:" + port)
 	topics := []string{"Point", "Single", "Multi"}
 	for _, topic := range topics {
 		subscriber.SetSubscribe(topic)
 	}
-	log.Printf("ZeroMQ Subscriber Already Connect")
+	fmt.Printf("ZeroMQ Subscriber Already Connect at Port %v \n", port)
 
 	for {
 		msg, err := subscriber.RecvMessage(0)
